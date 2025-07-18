@@ -1,0 +1,84 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real-Time Chat</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    h2 {
+      text-align: center;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: scroll;
+      padding: 10px;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+    #input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+    }
+    .message {
+      margin-bottom: 10px;
+    }
+    .meta {
+      font-size: 0.75rem;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <h2>💬 Real-Time Chat App</h2>
+  <div id="messages"></div>
+  <input id="input" placeholder="Type your message and hit Enter" />
+
+  <script>
+  const username = prompt("Enter your name:") || "Anonymous";
+  const socket = new WebSocket('ws://localhost:3000');
+  const messages = document.getElementById('messages');
+  const input = document.getElementById('input');
+
+  socket.onmessage = async (event) => {
+    const text = await event.data.text();
+    const data = JSON.parse(text);
+
+    const msg = document.createElement('div');
+    msg.classList.add('message');
+
+    if (data.sender === username) {
+      msg.classList.add('outgoing');
+      msg.innerHTML = `<strong>You:</strong> ${data.message}<br>
+                       <span class="meta">${new Date(data.timestamp).toLocaleTimeString()}</span>`;
+    } else {
+      msg.classList.add('incoming');
+      msg.innerHTML = `<strong>${data.sender}:</strong> ${data.message}<br>
+                       <span class="meta">${new Date(data.timestamp).toLocaleTimeString()}</span>`;
+    }
+
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && input.value.trim() !== '') {
+      const payload = {
+        sender: username,
+        message: input.value.trim(),
+        timestamp: new Date().toISOString()
+      };
+      socket.send(JSON.stringify(payload));
+      input.value = '';
+    }
+  });
+</script>
+
+</body>
+</html>
